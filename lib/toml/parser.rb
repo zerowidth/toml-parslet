@@ -55,8 +55,7 @@ module TOML
     end
 
     def array_contents
-      # FIXME why does datetime need to be first?
-      value_list(datetime) | value_list(integer) | value_list(float) |
+      value_list(datetime) | value_list(float) | value_list(integer) |
         value_list(boolean) | value_list(string) | value_list(array)
     end
 
