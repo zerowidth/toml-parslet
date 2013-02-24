@@ -1,11 +1,18 @@
 module TOML
 
   class Parser < Parslet::Parser
-    rule(:digit)       { match["0-9"] }
-    rule(:space)       { match["\t "] }
-    rule(:whitespace)  { space.repeat }
-    rule(:array_space) { match["\t\n "].repeat }
-    rule(:newline)     { str("\n") }
+    rule(:digit)      { match["0-9"] }
+    rule(:space)      { match["\t "] }
+    rule(:whitespace) { space.repeat }
+    rule(:newline)    { str("\n") }
+
+    rule(:array_space) do
+      (space | (comment.maybe >> newline)).repeat
+    end
+
+    rule(:comment) do
+      str("#") >> (newline.absent? >> any).repeat
+    end
 
     rule(:integer) do
       str("-").maybe >> match["1-9"] >> digit.repeat
@@ -60,7 +67,7 @@ module TOML
     rule :key_group_name do
       whitespace >> str("[") >>
       (str("]").absent? >> any).repeat(1) >>
-      str("]") >> whitespace
+      str("]") >> whitespace >> comment.maybe
     end
 
     rule :value do
@@ -70,18 +77,18 @@ module TOML
     rule :assignment do
       whitespace >>
       key >> whitespace >> str("=") >> whitespace >> value >>
-      whitespace
+      whitespace >> comment.maybe
     end
 
     rule :assignments do
       assignment >>
-      (newline >> (assignment | whitespace)).repeat >>
+      (newline >> (assignment | whitespace >> comment.maybe)).repeat >>
       newline.maybe
     end
 
     rule :key_group do
       key_group_name >>
-      (newline >> (assignment | whitespace)).repeat >>
+      (newline >> (assignment | whitespace >> comment.maybe)).repeat >>
       newline.maybe
     end
 

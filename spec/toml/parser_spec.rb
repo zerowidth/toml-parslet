@@ -75,6 +75,7 @@ describe TOML::Parser do
     end
 
     it "ignores whitespace in arrays" do
+      expect(array_parser).to parse("[\n1\n,\n2\n]")
       expect(array_parser).to parse("[\n\n\t1  , 2,     3\t,4\n]")
     end
 
@@ -89,9 +90,14 @@ describe TOML::Parser do
       )
     end
 
+    it "parses arrays with arbitrary comments and lines within" do
+      expect(array_parser).to parse(%Q([1,#c\n2]))
+      expect(array_parser).to parse(
+        %Q([ 1, 2,#comment\n \n\t# a comment, , ,\n3#xx\n\t,\t\n\n\n4]))
+    end
   end
 
-  context "assignments" do
+  context "assignment" do
     let(:ap) { parser.assignment }
 
     it "parses keys" do
@@ -120,6 +126,12 @@ describe TOML::Parser do
     it "parses an assignment with whitespace" do
       expect(ap).to parse("    key =    12345")
     end
+
+    it "parses an assignment with a comment" do
+      expect(ap).to parse("key = 1234 # comment")
+      expect(ap).to parse("key = 1234#comment can contain almost anything")
+      expect(ap).to_not parse("key = 1234 # no newlines \n")
+    end
   end
 
   context "key group names" do
@@ -131,6 +143,11 @@ describe TOML::Parser do
       expect(kgp).to     parse("[key group]")
       expect(kgp).to     parse("[key group]    ")
       expect(kgp).to_not parse("[key]]")
+    end
+
+    it "allows a comment after a group name" do
+      expect(kgp).to parse("[key.group.name] # comment")
+      expect(kgp).to parse("[key.group.name]#comment")
     end
   end
 
@@ -176,4 +193,5 @@ describe TOML::Parser do
     end
 
   end
+
 end
