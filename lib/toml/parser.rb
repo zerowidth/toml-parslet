@@ -2,6 +2,7 @@ module TOML
 
   class Parser < Parslet::Parser
     rule(:digit)       { match["0-9"] }
+    rule(:array_space) { match["\t\n "].repeat }
 
     rule(:integer) do
       str("-").maybe >> match["1-9"] >> digit.repeat
@@ -33,6 +34,21 @@ module TOML
 
     rule :value do
       integer | float | boolean | datetime | string
+    end
+
+    def value_list(value_type)
+      value_type >>
+      (array_space >> str(",") >> array_space >> value_type).repeat
+    end
+
+    def array_contents
+      # FIXME why does datetime need to be first?
+      value_list(datetime) | value_list(integer) | value_list(float) |
+        value_list(boolean) | value_list(string) | value_list(array)
+    end
+
+    rule :array do
+      str("[") >> array_space >> array_contents >> array_space >> str("]")
     end
 
     # root :document

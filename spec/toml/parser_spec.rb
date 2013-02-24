@@ -41,4 +41,47 @@ describe TOML::Parser do
       expect(value_parser).to_not parse("\"hello\nworld\"")
     end
   end
+
+  context "array parsing" do
+    let(:array_parser) { parser.array }
+
+    it "does not parse empty arrays" do
+      expect(array_parser).to_not parse("[]")
+    end
+
+    it "parses arrays of integers" do
+      expect(array_parser).to parse("[1]")
+      expect(array_parser).to parse("[1, 2, 3, 4, 5]")
+    end
+
+    it "parses arrays of floats" do
+      expect(array_parser).to parse("[0.1, -0.1, 3.14159]")
+    end
+
+    it "parses arrays of booleans" do
+      expect(array_parser).to parse("[ true, false, true, true ]")
+    end
+
+    it "parses arrays of datetimes" do
+      expect(array_parser).to parse("[1979-05-27T07:32:00Z]")#, 2013-02-24T17:26:21Z]")
+    end
+
+    it "parses arrays of strings" do
+      expect(array_parser).to parse(
+        %q([
+          "hello, world",
+          "goodbye!"
+        ]))
+    end
+
+    it "ignores whitespace in arrays" do
+      expect(array_parser).to parse("[\n\n\t1  , 2,     3\t,4\n]")
+    end
+
+    it "parses arrays of arrays" do
+      expect(array_parser).to parse(
+        %q([ [1, 2, 3], ["foo", "bar"] ]))
+    end
+
+  end
 end
