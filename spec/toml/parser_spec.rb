@@ -83,5 +83,97 @@ describe TOML::Parser do
         %q([ [1, 2, 3], ["foo", "bar"] ]))
     end
 
+    it "does not parse mixed arrays" do
+      expect(array_parser).to_not parse(
+        %q([1, 2, "three"])
+      )
+    end
+
+  end
+
+  context "assignments" do
+    let(:ap) { parser.assignment }
+
+    it "parses keys" do
+      expect(parser.key).to     parse("foobar")
+      expect(parser.key).to     parse("lolwhat.noWAY")
+      expect(parser.key).to_not parse("no white\tspace")
+      expect(parser.key).to_not parse("noequal=thing")
+    end
+
+    it "parses an assignment to a simple value" do
+      expect(ap).to parse('key=3.14')
+      expect(ap).to parse('key = 10')
+      expect(ap).to parse('key = 10.10')
+      expect(ap).to parse('key = true')
+      expect(ap).to parse('key = "value"')
+      expect(ap).to parse('foobar.baz="value"')
+    end
+
+    it "parses an assignment to an array" do
+      expect(ap).to parse(
+        "array = [ 1,
+                   2,
+                   3 ]")
+    end
+
+    it "parses an assignment with whitespace" do
+      expect(ap).to parse("    key =    12345")
+    end
+  end
+
+  context "key group names" do
+    let(:kgp) { parser.key_group_name }
+
+    it "parses key group names" do
+      expect(kgp).to     parse("[key.group.name]")
+      expect(kgp).to     parse("    [key.group.name]")
+      expect(kgp).to     parse("[key group]")
+      expect(kgp).to     parse("[key group]    ")
+      expect(kgp).to_not parse("[key]]")
+    end
+  end
+
+  context "assignments" do
+    let(:ap) { parser.assignments }
+
+    it "parses a single assignment" do
+      expect(ap).to parse(
+        %q(key1 = "some string"))
+    end
+
+    it "parses a series of assignments" do
+      expect(ap).to parse(
+        %q(key1 = "some string"
+           key2 = 3.14159
+           birthday = 1979-05-27T07:32:00Z)
+      )
+    end
+
+    it "ignores empty lines" do
+      expect(ap).to parse(
+        %Q(key1 = "some string"\n\t\t
+           key2 = 3.14159
+           birthday = 1979-05-27T07:32:00Z)
+      )
+    end
+  end
+
+  context "key groups" do
+    let(:kgp) { parser.key_group }
+
+    it "parses an empty key group" do
+      expect(kgp).to parse("[empty group]")
+      expect(kgp).to parse("[empty group]\n\n\n")
+    end
+
+    it "parses a key group with assignments" do
+      expect(kgp).to parse(
+        %Q([key group]
+        key = "value"
+        pi = 3.14159)
+      )
+    end
+
   end
 end

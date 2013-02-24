@@ -2,17 +2,23 @@ module TOML
 
   class Parser < Parslet::Parser
     rule(:digit)       { match["0-9"] }
+    rule(:space)       { match["\t "] }
+    rule(:whitespace)  { space.repeat }
     rule(:array_space) { match["\t\n "].repeat }
+    rule(:newline)     { str("\n") }
 
     rule(:integer) do
       str("-").maybe >> match["1-9"] >> digit.repeat
     end
+
     rule(:float) do
       str("-").maybe >> digit.repeat(1) >> str(".") >> digit.repeat(1)
     end
+
     rule(:boolean) do
       str("true") | str("false")
     end
+
     rule(:datetime) do
       # 1979-05-27T07:32:00Z
       digit.repeat(4).as(:year)   >> str("-") >>
@@ -32,10 +38,6 @@ module TOML
       str('"')
     end
 
-    rule :value do
-      integer | float | boolean | datetime | string
-    end
-
     def value_list(value_type)
       value_type >>
       (array_space >> str(",") >> array_space >> value_type).repeat
@@ -51,7 +53,39 @@ module TOML
       str("[") >> array_space >> array_contents >> array_space >> str("]")
     end
 
-    # root :document
+    rule :key do
+      (match["\\[\\]="].absent? >> space.absent? >> any).repeat(1)
+    end
+
+    rule :key_group_name do
+      whitespace >> str("[") >>
+      (str("]").absent? >> any).repeat(1) >>
+      str("]") >> whitespace
+    end
+
+    rule :value do
+      datetime | float | integer | boolean | string | array
+    end
+
+    rule :assignment do
+      whitespace >>
+      key >> whitespace >> str("=") >> whitespace >> value >>
+      whitespace
+    end
+
+    rule :assignments do
+      assignment >>
+      (newline >> (assignment | whitespace)).repeat >>
+      newline.maybe
+    end
+
+    rule :key_group do
+      key_group_name >>
+      (newline >> (assignment | whitespace)).repeat >>
+      newline.maybe
+    end
+
+    root :document
   end
 
 end
