@@ -1,4 +1,4 @@
-# Toml::Parslet
+# TOML::Parslet
 
 TODO: Write a gem description
 

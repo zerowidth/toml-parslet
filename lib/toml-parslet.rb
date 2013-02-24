@@ -1,7 +1,4 @@
-require "toml-parslet/version"
+require "toml/version"
 
-module Toml
-  module Parslet
-    # Your code goes here...
-  end
+module TOML
 end

@@ -1,0 +1,3 @@
+module TOML
+  VERSION = "0.0.1"
+end
