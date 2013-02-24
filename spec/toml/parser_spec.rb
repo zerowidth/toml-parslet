@@ -194,4 +194,8 @@ describe TOML::Parser do
 
   end
 
+  it "can parse a valid TOML document" do
+    expect(parser).to parse(fixture("example.toml"))
+  end
+
 end

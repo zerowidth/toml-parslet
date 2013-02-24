@@ -14,6 +14,10 @@ module TOML
       str("#") >> (newline.absent? >> any).repeat
     end
 
+    rule(:empty_lines) do
+      (whitespace >> comment.maybe >> newline).repeat
+    end
+
     rule(:integer) do
       str("-").maybe >> match["1-9"] >> digit.repeat
     end
@@ -82,13 +86,19 @@ module TOML
 
     rule :assignments do
       assignment >>
-      (newline >> (assignment | whitespace >> comment.maybe)).repeat >>
-      newline.maybe
+      (newline >> (assignment | whitespace >> comment.maybe)).repeat
     end
 
     rule :key_group do
       key_group_name >>
-      (newline >> (assignment | whitespace >> comment.maybe)).repeat >>
+      (newline >> (assignment | whitespace >> comment.maybe)).repeat
+    end
+
+    rule :document do
+      empty_lines >>
+      assignments >>
+      empty_lines >>
+      key_group.repeat >>
       newline.maybe
     end
 
