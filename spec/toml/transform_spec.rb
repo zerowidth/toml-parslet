@@ -1,0 +1,104 @@
+require "spec_helper"
+
+describe TOML::Transform do
+  let(:xform) { TOML::Transform.new }
+
+  context "values" do
+    it "transforms an integer value" do
+      expect(xform.apply(:integer => "1")).to eq(1)
+    end
+
+    it "transforms a float" do
+      expect(xform.apply(:float => "0.123")).to eq(0.123)
+    end
+
+    it "transforms a boolean" do
+      expect(xform.apply(:boolean => "true")).to eq(true)
+      expect(xform.apply(:boolean => "false")).to eq(false)
+    end
+
+    it "transforms a datetime" do
+      expect(xform.apply(:datetime => "1979-05-27T07:32:00Z")).to eq(
+        Time.parse("1979-05-27T07:32:00Z"))
+    end
+
+    it "transforms a string" do
+      expect(xform.apply(:string => "a string")).to eq("a string")
+    end
+  end
+
+  context "arrays" do
+    it "transforms an array of integers" do
+      input = { :array => [ {:integer => "1"}, {:integer => "2"} ] }
+      expect( xform.apply(input) ).to eq([1,2])
+    end
+
+    it "transforms nested arrays" do
+      input = {
+        :array => [
+          { :array => [ {:integer => "1"}, {:integer => "2"} ] },
+          { :array => [ {:float => "0.1"}, {:float => "0.2"} ] }
+        ]
+      }
+      expect( xform.apply(input) ).to eq([[1,2], [0.1,0.2]])
+    end
+  end
+
+  context "key/value assignment" do
+    it "converts a key/value pair into a pairs" do
+      input = {:key => "a key", :value => "a value"}
+      expect( xform.apply(input) ).to eq(["a key", "a value"])
+    end
+
+    it "converts a key/value pair with an array value" do
+      input = {:key => "a key", :value => [[1,2],[3,4]]}
+      expect( xform.apply(input) ).to eq(["a key", [[1,2],[3,4]]])
+    end
+  end
+
+  context "a list of global assignments" do
+    it "converts a list of global assignments into a hash" do
+      input = {:globals =>
+               [{:key => "c", :value => {:integer => "3"}},
+                {:key => "d", :value => {:integer => "4"}}]}
+      expect(xform.apply(input)).to eq("c" => 3, "d" => 4)
+    end
+  end
+
+  context "a key group" do
+    it "converts a group name and assignments into a hash" do
+      input = {:group_name => "group",
+               :assignments => [["c", 1], ["d", 2]]}
+      expect(xform.apply(input)).to eq(
+        "group" => {"c" => 1, "d" => 2}
+      )
+    end
+
+    it "converts a complex group name and values into a nested hash" do
+      input = {:group_name => "foo.bar",
+               :assignments => [["c", 1], ["d", 2]]}
+      expect(xform.apply(input)).to eq(
+        "foo" => {"bar" => {"c" => 1, "d" => 2}}
+      )
+    end
+  end
+
+  it "converts a simple TOML doc into a hash" do
+    input = TOML::Parser.new.parse(fixture("simple.toml"))
+    expect(xform.apply(input)).to eq(
+      "title" => "global title",
+      "group1" => {"a" => 1, "b" => 2},
+      "group2" => {"c" => 3, "d" => 4}
+    )
+  end
+
+  # it "converts a full TOML doc into a hash" do
+  #   input = TOML::Parser.new.parse(fixture("example.toml"))
+  #   expect(input).to eq "lol"
+  #   expect(xform.apply(input)).to eq(
+  #     :lol => "what"
+  #   )
+  # end
+
+end
+

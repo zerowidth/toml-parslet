@@ -19,25 +19,25 @@ module TOML
     end
 
     rule(:integer) do
-      str("-").maybe >> match["1-9"] >> digit.repeat
+      (str("-").maybe >> match["1-9"] >> digit.repeat).as(:integer)
     end
 
     rule(:float) do
-      str("-").maybe >> digit.repeat(1) >> str(".") >> digit.repeat(1)
+      (str("-").maybe >> digit.repeat(1) >>
+       str(".") >> digit.repeat(1)).as(:float)
     end
 
     rule(:boolean) do
-      str("true") | str("false")
+      (str("true") | str("false")).as(:boolean)
     end
 
     rule(:datetime) do
-      # 1979-05-27T07:32:00Z
-      digit.repeat(4).as(:year)   >> str("-") >>
-      digit.repeat(2).as(:month)  >> str("-") >>
-      digit.repeat(2).as(:day)    >> str("T") >>
-      digit.repeat(2).as(:hour)   >> str(":") >>
-      digit.repeat(2).as(:minute) >> str(":") >>
-      digit.repeat(2).as(:second) >> str("Z")
+      (digit.repeat(4) >> str("-") >>
+       digit.repeat(2) >> str("-") >>
+       digit.repeat(2) >> str("T") >>
+       digit.repeat(2) >> str(":") >>
+       digit.repeat(2) >> str(":") >>
+       digit.repeat(2) >> str("Z")).as(:datetime)
     end
 
     rule(:string_special)  { match['\0\t\n\r"\\\\'] }
@@ -45,7 +45,7 @@ module TOML
 
     rule(:string) do
       str('"') >>
-      (escaped_special | string_special.absent? >> any).repeat >>
+      ((escaped_special | string_special.absent? >> any).repeat).as(:string) >>
       str('"')
     end
 
@@ -60,7 +60,9 @@ module TOML
     end
 
     rule :array do
-      str("[") >> array_space >> array_contents >> array_space >> str("]")
+      (str("[") >> array_space >>
+      array_contents.repeat(1) >>
+      array_space >> str("]")).as(:array)
     end
 
     rule :key do
@@ -69,7 +71,7 @@ module TOML
 
     rule :key_group_name do
       whitespace >> str("[") >>
-      (str("]").absent? >> any).repeat(1) >>
+      (str("]").absent? >> any).repeat(1).as(:group_name) >>
       str("]") >> whitespace >> comment.maybe
     end
 
@@ -79,7 +81,9 @@ module TOML
 
     rule :assignment do
       whitespace >>
-      key >> whitespace >> str("=") >> whitespace >> value >>
+      key.as(:key) >>
+      whitespace >> str("=") >> whitespace >>
+      value.as(:value) >>
       whitespace >> comment.maybe
     end
 
@@ -89,16 +93,18 @@ module TOML
     end
 
     rule :key_group do
-      key_group_name >>
-      (newline >> (assignment | whitespace >> comment.maybe)).repeat
+      (key_group_name >>
+       (newline >>
+        (assignment | whitespace >> comment.maybe)).repeat.as(:assignments)
+      ).as(:key_group)
     end
 
     rule :document do
-      empty_lines >>
-      assignments >>
-      empty_lines >>
-      key_group.repeat >>
-      newline.maybe
+      (empty_lines >>
+       assignments.repeat.as(:globals) >>
+       empty_lines >>
+       key_group.repeat >>
+       newline.maybe).as(:document)
     end
 
     root :document

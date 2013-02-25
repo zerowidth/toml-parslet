@@ -40,6 +40,29 @@ describe TOML::Parser do
       expect(value_parser).to     parse('"hello\\t\\n\\\\\\0world\\n"')
       expect(value_parser).to_not parse("\"hello\nworld\"")
     end
+
+    it "parses integers into {:integer => 'digits'}" do
+      expect(value_parser.parse("1234")).to eq :integer => "1234"
+    end
+
+    it "parses floats into {:float => 'digits'}" do
+      expect(value_parser.parse("-0.123")).to eq :float => "-0.123"
+    end
+
+    it "parses booleans into {:boolean => 'value'}" do
+      expect(value_parser.parse("true")).to eq :boolean => "true"
+    end
+
+    it "parses datetimes into hashes of date/time data" do
+      expect(value_parser.parse("1979-05-27T07:32:00Z")).to eq(
+        :datetime => "1979-05-27T07:32:00Z"
+      )
+    end
+
+    it "parses strings into {:string => 'string contents'}" do
+      expect(value_parser.parse('"hello world"')).to eq(
+        :string => "hello world")
+    end
   end
 
   context "array parsing" do
@@ -95,6 +118,18 @@ describe TOML::Parser do
       expect(array_parser).to parse(
         %Q([ 1, 2,#comment\n \n\t# a comment, , ,\n3#xx\n\t,\t\n\n\n4]))
     end
+
+    it "captures arrays as :array => [ value, value, ... ]" do
+      expect(array_parser.parse("[1,2]")).to eq(
+        :array => [ {:integer => "1"}, {:integer => "2"}])
+    end
+
+    it "captures nested arrays" do
+      expect(array_parser.parse("[ [1,2] ]")).to eq(
+        :array => [
+          {:array => [ {:integer => "1"}, {:integer => "2"}]}
+        ])
+    end
   end
 
   context "assignment" do
@@ -132,6 +167,11 @@ describe TOML::Parser do
       expect(ap).to parse("key = 1234#comment can contain almost anything")
       expect(ap).to_not parse("key = 1234 # no newlines \n")
     end
+
+    it "captures the key and the value" do
+      expect(ap.parse("thing = 1")).to eq(
+        :key => "thing", :value => {:integer => "1"})
+    end
   end
 
   context "key group names" do
@@ -148,6 +188,12 @@ describe TOML::Parser do
     it "allows a comment after a group name" do
       expect(kgp).to parse("[key.group.name] # comment")
       expect(kgp).to parse("[key.group.name]#comment")
+    end
+
+    it "captures as :group_name" do
+      expect(kgp.parse("[key.group.name]")).to eq(
+        :group_name => "key.group.name"
+      )
     end
   end
 
@@ -174,6 +220,15 @@ describe TOML::Parser do
            birthday = 1979-05-27T07:32:00Z)
       )
     end
+
+    it "captures a list of assignments" do
+      expect(ap.parse("a=1\nb=2")).to eq(
+        [
+          {:key => "a", :value => {:integer => "1"}},
+          {:key => "b", :value => {:integer => "2"}},
+        ]
+      )
+    end
   end
 
   context "key groups" do
@@ -192,10 +247,39 @@ describe TOML::Parser do
       )
     end
 
+    it "captures the group name and assignments" do
+      expect(kgp.parse("[kg]\na=1\nb=2")).to eq(
+        :key_group => {
+          :group_name => "kg",
+          :assignments => [
+            {:key => "a", :value => {:integer => "1"}},
+            {:key => "b", :value => {:integer => "2"}},
+          ]
+        }
+      )
+    end
+
   end
 
   it "can parse a valid TOML document" do
     expect(parser).to parse(fixture("example.toml"))
+  end
+
+  it "captures an entire document as a parse tree" do
+    expect(parser.parse(fixture("simple.toml"))).to eq(
+      :document =>
+      [{:globals => [{:key => "title", :value => {:string => "global title"}}]},
+       {:key_group =>
+        {:group_name => "group1",
+         :assignments =>
+        [{:key => "a", :value => {:integer => "1"}},
+         {:key => "b", :value => {:integer => "2"}}]}},
+       {:key_group =>
+        {:group_name => "group2",
+         :assignments =>
+        [{:key => "c", :value => {:integer => "3"}},
+         {:key => "d", :value => {:integer => "4"}}]}}]
+    )
   end
 
 end
