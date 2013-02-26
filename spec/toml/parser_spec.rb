@@ -158,16 +158,6 @@ describe TOML::Parser do
                    3 ]")
     end
 
-    it "parses an assignment with whitespace" do
-      expect(ap).to parse("    key =    12345")
-    end
-
-    it "parses an assignment with a comment" do
-      expect(ap).to parse("key = 1234 # comment")
-      expect(ap).to parse("key = 1234#comment can contain almost anything")
-      expect(ap).to_not parse("key = 1234 # no newlines \n")
-    end
-
     it "captures the key and the value" do
       expect(ap.parse("thing = 1")).to eq(
         :key => "thing", :value => {:integer => "1"})
@@ -175,23 +165,23 @@ describe TOML::Parser do
   end
 
   context "key group names" do
-    let(:kgp) { parser.key_group_name }
+    let(:gn) { parser.group_name }
 
     it "parses key group names" do
-      expect(kgp).to     parse("[key.group.name]")
-      expect(kgp).to     parse("    [key.group.name]")
-      expect(kgp).to     parse("[key group]")
-      expect(kgp).to     parse("[key group]    ")
-      expect(kgp).to_not parse("[key]]")
+      expect(gn).to     parse("[key.group.name]")
+      expect(gn).to     parse("    [key.group.name]")
+      expect(gn).to     parse("[key group]")
+      expect(gn).to     parse("[key group]    ")
+      expect(gn).to_not parse("[key]]")
     end
 
     it "allows a comment after a group name" do
-      expect(kgp).to parse("[key.group.name] # comment")
-      expect(kgp).to parse("[key.group.name]#comment")
+      expect(gn).to parse("[key.group.name] # comment")
+      expect(gn).to parse("[key.group.name]#comment")
     end
 
     it "captures as :group_name" do
-      expect(kgp.parse("[key.group.name]")).to eq(
+      expect(gn.parse("[key.group.name]")).to eq(
         :group_name => "key.group.name"
       )
     end
@@ -219,6 +209,15 @@ describe TOML::Parser do
            key2 = 3.14159
            birthday = 1979-05-27T07:32:00Z)
       )
+    end
+
+    it "parses an assignment with whitespace" do
+      expect(ap).to parse("    key =    12345")
+    end
+
+    it "parses an assignment with a comment" do
+      expect(ap).to parse("key = 1234 # comment")
+      expect(ap).to parse("key = 1234#comment can contain almost anything")
     end
 
     it "captures a list of assignments" do
@@ -249,13 +248,11 @@ describe TOML::Parser do
 
     it "captures the group name and assignments" do
       expect(kgp.parse("[kg]\na=1\nb=2")).to eq(
-        :key_group => {
-          :group_name => "kg",
-          :assignments => [
-            {:key => "a", :value => {:integer => "1"}},
-            {:key => "b", :value => {:integer => "2"}},
-          ]
-        }
+        :key_group => [
+          {:group_name => "kg"},
+          {:key => "a", :value => {:integer => "1"}},
+          {:key => "b", :value => {:integer => "2"}}
+        ]
       )
     end
 
@@ -265,20 +262,72 @@ describe TOML::Parser do
     expect(parser).to parse(fixture("example.toml"))
   end
 
-  it "captures an entire document as a parse tree" do
+  it "captures an simple document as a parse tree" do
     expect(parser.parse(fixture("simple.toml"))).to eq(
       :document =>
-      [{:globals => [{:key => "title", :value => {:string => "global title"}}]},
-       {:key_group =>
-        {:group_name => "group1",
-         :assignments =>
-        [{:key => "a", :value => {:integer => "1"}},
-         {:key => "b", :value => {:integer => "2"}}]}},
-       {:key_group =>
-        {:group_name => "group2",
-         :assignments =>
-        [{:key => "c", :value => {:integer => "3"}},
-         {:key => "d", :value => {:integer => "4"}}]}}]
+      [{:globals =>
+        {:key => "title", :value => {:string => "global title"}}},
+       {:key_group => [
+        {:group_name => "group1"},
+        {:key => "a", :value => {:integer => "1"}},
+        {:key => "b", :value => {:integer => "2"}}]},
+       {:key_group => [
+        {:group_name => "group2"},
+        {:key => "c", :value => {:integer => "3"}},
+        {:key => "d", :value => {:integer => "4"}}]}]
+    )
+  end
+
+  it "captures a valid document as a parse tree" do
+    expect(parser.parse(fixture("example.toml"))).to eq(
+      :document => [
+        {:globals =>
+         [{:key => "\ntitle", :value => {:string => "TOML Example"}}]},
+        {:key_group => [
+          {:group_name => "owner"},
+          {:key => "name", :value => {:string => "Tom Preston-Werner"}},
+          {:key => "organization", :value => {:string => "GitHub"}},
+          {:key => "bio", :value => {:string => "GitHub Cofounder & CEO\\nLikes tater tots and beer."}},
+          {:key => "dob", :value => {:datetime => "1979-05-27T07:32:00Z"}}
+         ]},
+        {:key_group => [
+          {:group_name => "database"},
+          {:key => "server", :value => {:string => "192.168.1.1"}},
+          {:key => "ports", :value => {:array => [
+            {:integer => "8001"},
+            {:integer => "8001"},
+            {:integer => "8002"} ]}},
+          {:key => "connection_max", :value => {:integer => "5000"}},
+          {:key => "enabled", :value => {:boolean => "true"}}]},
+        {:key_group => {:group_name => "servers"}},
+        {:key_group => [
+          {:group_name => "servers.alpha"},
+          {:key => "ip", :value => {:string => "10.0.0.1"}},
+          {:key => "dc", :value => {:string => "eqdc10"}}]},
+        {:key_group => [
+          {:group_name => "servers.beta"},
+          {:key => "ip", :value => {:string => "10.0.0.2"}},
+          {:key => "dc", :value => {:string => "eqdc10"}}]},
+        {:key_group => [
+          {:group_name => "clients"},
+          {:key => "data", :value => {:array => [
+            {:array => [
+              {:string => "gamma"},
+              {:string => "delta"}]},
+            {:array => [
+              {:integer => "1"},
+              {:integer => "2"}]}]}},
+          {:key => "hosts", :value => {:array => [
+            {:string => "alpha"},
+            {:string => "omega"}]}}
+          ]}
+      ]
+    )
+  end
+
+  it "captures an empty document" do
+    expect(parser.parse("\n\n#comment\n\n")).to eq(
+      :document => {:globals => "\n\n#comment\n\n"}
     )
   end
 

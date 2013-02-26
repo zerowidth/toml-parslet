@@ -3,19 +3,15 @@ module TOML
   class Parser < Parslet::Parser
     rule(:digit)      { match["0-9"] }
     rule(:space)      { match["\t "] }
-    rule(:whitespace) { space.repeat }
+    rule(:space?)     { space.repeat }
     rule(:newline)    { str("\n") }
 
     rule(:array_space) do
-      (space | (comment.maybe >> newline)).repeat
+      (space | (comment? >> newline)).repeat
     end
 
-    rule(:comment) do
-      str("#") >> (newline.absent? >> any).repeat
-    end
-
-    rule(:empty_lines) do
-      (whitespace >> comment.maybe >> newline).repeat
+    rule(:comment?) do
+      (str("#") >> (newline.absent? >> any).repeat).maybe
     end
 
     rule(:integer) do
@@ -69,40 +65,36 @@ module TOML
       (match["\\[\\]="].absent? >> space.absent? >> any).repeat(1)
     end
 
-    rule :key_group_name do
-      whitespace >> str("[") >>
-      (str("]").absent? >> any).repeat(1).as(:group_name) >>
-      str("]") >> whitespace >> comment.maybe
-    end
-
     rule :value do
       datetime | float | integer | boolean | string | array
     end
 
     rule :assignment do
-      whitespace >>
       key.as(:key) >>
-      whitespace >> str("=") >> whitespace >>
-      value.as(:value) >>
-      whitespace >> comment.maybe
+      space? >> str("=") >> space? >>
+      value.as(:value)
+    end
+
+    rule :group_name do
+      space? >> str("[") >>
+      (str("]").absent? >> any).repeat(1).as(:group_name) >>
+      str("]") >> space? >> comment?
+    end
+
+    rule :assignment_line do
+      space? >> assignment.maybe >> space? >> comment?
     end
 
     rule :assignments do
-      assignment >>
-      (newline >> (assignment | whitespace >> comment.maybe)).repeat
+      assignment_line >> (newline >> assignment_line).repeat
     end
 
     rule :key_group do
-      (key_group_name >>
-       (newline >>
-        (assignment | whitespace >> comment.maybe)).repeat.as(:assignments)
-      ).as(:key_group)
+      (group_name >> (newline >> assignments).maybe).as(:key_group)
     end
 
     rule :document do
-      (empty_lines >>
-       assignments.repeat.as(:globals) >>
-       empty_lines >>
+      ((key_group | assignments.as(:globals)) >>
        key_group.repeat >>
        newline.maybe).as(:document)
     end
