@@ -58,10 +58,15 @@ describe TOML::Transform do
 
   context "a list of global assignments" do
     it "converts a list of global assignments into a hash" do
-      input = {:globals =>
+      input = {:assignments =>
                [{:key => "c", :value => {:integer => "3"}},
                 {:key => "d", :value => {:integer => "4"}}]}
       expect(xform.apply(input)).to eq("c" => 3, "d" => 4)
+    end
+
+    it "converts an empty (comments-only) assignments list" do
+      input = {:assignments => "\n#comment"}
+      expect(xform.apply(input)).to eq({})
     end
   end
 
@@ -81,6 +86,14 @@ describe TOML::Transform do
         "foo" => {"bar" => {"c" => 1, "d" => 2}}
       )
     end
+
+    it "converts an empty key group (comments-only) into a hash" do
+      input = {:group_name => "foo.bar",
+               :assignments => "\n#comment"}
+      expect(xform.apply(input)).to eq(
+        "foo" => {"bar" => {}}
+      )
+    end
   end
 
   it "converts a simple TOML doc into a hash" do
@@ -92,13 +105,33 @@ describe TOML::Transform do
     )
   end
 
-  # it "converts a full TOML doc into a hash" do
-  #   input = TOML::Parser.new.parse(fixture("example.toml"))
-  #   expect(input).to eq "lol"
-  #   expect(xform.apply(input)).to eq(
-  #     :lol => "what"
-  #   )
-  # end
+  it "converts a full TOML doc into a hash" do
+    input = TOML::Parser.new.parse(fixture("example.toml"))
+    expect(xform.apply(input)).to eq(
+      "title" => "TOML Example",
+      "owner" => {
+        "name" => "Tom Preston-Werner",
+        "organization" => "GitHub",
+        "bio" => "GitHub Cofounder & CEO\\nLikes tater tots and beer.",
+        "dob" => Time.parse("1979-05-27 07:32:00 UTC")
+      },
+      "database" => {
+        "server" => "192.168.1.1",
+        "ports" => [8001, 8001, 8002],
+        "connection_max" => 5000,
+        "enabled" => true},
+        "servers" => {
+          "beta" => {
+            "ip" => "10.0.0.2",
+            "dc" => "eqdc10"
+          }
+        },
+        "clients" => {
+          "data" => [ ["gamma", "delta"], [1, 2] ],
+          "hosts" => ["alpha", "omega"]
+        }
+    )
+  end
 
 end
 

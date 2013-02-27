@@ -62,6 +62,7 @@ module TOML
     end
 
     rule :key do
+      str("#").absent? >> newline.absent? >>
       (match["\\[\\]="].absent? >> space.absent? >> any).repeat(1)
     end
 
@@ -86,16 +87,16 @@ module TOML
     end
 
     rule :assignments do
-      assignment_line >> (newline >> assignment_line).repeat
+      (assignment_line >> (newline >> assignment_line).repeat).as(:assignments)
     end
 
     rule :key_group do
       (group_name >>
-       (newline >> assignments.as(:assignments)).maybe).as(:key_group)
+       (newline >> assignments).maybe).as(:key_group)
     end
 
     rule :document do
-      ((key_group | assignments.as(:globals)) >>
+      ((key_group | assignments) >>
        key_group.repeat >>
        newline.maybe).as(:document)
     end

@@ -158,6 +158,10 @@ describe TOML::Parser do
                    3 ]")
     end
 
+    it "does not parse a comment" do
+      expect(ap).to_not parse("#comment=1")
+    end
+
     it "captures the key and the value" do
       expect(ap.parse("thing = 1")).to eq(
         :key => "thing", :value => {:integer => "1"})
@@ -222,10 +226,26 @@ describe TOML::Parser do
 
     it "captures a list of assignments" do
       expect(ap.parse("a=1\nb=2")).to eq(
-        [
+        :assignments => [
           {:key => "a", :value => {:integer => "1"}},
           {:key => "b", :value => {:integer => "2"}},
         ]
+      )
+    end
+
+    it "captures an assignment after a comment and newlines" do
+      expect(ap.parse("#comment\na=1")).to eq(
+        :assignments => [{:key => "a", :value => {:integer => "1"}}]
+      )
+
+      expect(ap.parse("#comment\n\t\n\na=1")).to eq(
+        :assignments => [{:key => "a", :value => {:integer => "1"}}]
+      )
+    end
+
+    it "captures just comments as a string" do
+      expect(ap.parse("#comment\n")).to eq(
+        :assignments => "#comment\n"
       )
     end
   end
@@ -264,6 +284,14 @@ describe TOML::Parser do
       )
     end
 
+    it "captures a single assignment in a key group" do
+      expect(kgp.parse("[kg]\na=1")).to eq(
+        :key_group => {
+          :group_name => "kg",
+          :assignments => {:key => "a", :value => {:integer => "1"}}}
+      )
+    end
+
   end
 
   it "can parse a valid TOML document" do
@@ -273,7 +301,7 @@ describe TOML::Parser do
   it "captures an simple document as a parse tree" do
     expect(parser.parse(fixture("simple.toml"))).to eq(
       :document =>
-      [{:globals =>
+      [{:assignments =>
         {:key => "title", :value => {:string => "global title"}}},
        {:key_group =>
         {:group_name => "group1",
@@ -291,8 +319,8 @@ describe TOML::Parser do
   it "captures a valid document as a parse tree" do
     expect(parser.parse(fixture("example.toml"))).to eq(
       :document => [
-        {:globals =>
-         [{:key => "\ntitle", :value => {:string => "TOML Example"}}]},
+        {:assignments =>
+         [{:key => "title", :value => {:string => "TOML Example"}}]},
         {:key_group =>
          {:group_name => "owner",
           :assignments => [
@@ -347,7 +375,7 @@ describe TOML::Parser do
 
   it "captures an empty document as a string match" do
     expect(parser.parse("\n\n#comment\n\n")).to eq(
-      :document => {:globals => "\n\n#comment\n\n"}
+      :document => {:assignments => "\n\n#comment\n\n"}
     )
   end
 

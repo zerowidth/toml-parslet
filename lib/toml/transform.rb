@@ -11,8 +11,16 @@ module TOML
       [key, value]
     end
 
-    rule(:globals => subtree(:values)) do |dict|
-      combine_assignments(dict[:values])
+    rule(:assignments => simple(:values)) do
+      {}
+    end
+
+    rule(:assignments => sequence(:values)) do |dict|
+      combine_assignments [dict[:values]]
+    end
+
+    rule(:assignments => subtree(:values)) do |dict|
+      combine_assignments dict[:values]
     end
 
     def self.combine_assignments(assignments)
@@ -23,15 +31,30 @@ module TOML
       end
     end
 
-    rule(:group_name => simple(:key), :assignments => subtree(:assignments)) do |dict|
-      outer = {}
-      current = outer
-      dict[:key].to_s.split(".").each do |key|
-        current[key] = {}
-        current = current[key]
+    def self.nested_hash_from_key(key, values)
+      {}.tap do |outer|
+        current = outer
+        key.to_s.split(".").each do |key_part|
+          current[key_part] = {}
+          current = current[key_part]
+        end
+        current.merge! values
       end
-      current.merge! combine_assignments(dict[:assignments])
-      outer
+    end
+
+    rule(:group_name => simple(:key),
+         :assignments => simple(:values)) do |dict|
+      nested_hash_from_key dict[:key], {}
+    end
+
+    rule(:group_name => simple(:key),
+         :assignments => sequence(:values)) do |dict|
+      nested_hash_from_key dict[:key], combine_assignments(dict[:values])
+    end
+
+    rule(:group_name => simple(:key),
+         :assignments => subtree(:values)) do |dict|
+      nested_hash_from_key dict[:key], combine_assignments(dict[:values])
     end
 
     rule(:key_group => subtree(:values)) { values }
