@@ -248,11 +248,19 @@ describe TOML::Parser do
 
     it "captures the group name and assignments" do
       expect(kgp.parse("[kg]\na=1\nb=2")).to eq(
-        :key_group => [
-          {:group_name => "kg"},
-          {:key => "a", :value => {:integer => "1"}},
-          {:key => "b", :value => {:integer => "2"}}
-        ]
+        :key_group =>
+          {:group_name => "kg",
+          :assignments => [
+            {:key => "a", :value => {:integer => "1"}},
+            {:key => "b", :value => {:integer => "2"}}]}
+      )
+    end
+
+    it "captures empty assignments as a string" do
+      expect(kgp.parse("[kg]\n#comment\n\t\n")).to eq(
+        :key_group =>
+          {:group_name => "kg",
+           :assignments => "#comment\n\t\n"}
       )
     end
 
@@ -267,14 +275,16 @@ describe TOML::Parser do
       :document =>
       [{:globals =>
         {:key => "title", :value => {:string => "global title"}}},
-       {:key_group => [
-        {:group_name => "group1"},
-        {:key => "a", :value => {:integer => "1"}},
-        {:key => "b", :value => {:integer => "2"}}]},
-       {:key_group => [
-        {:group_name => "group2"},
-        {:key => "c", :value => {:integer => "3"}},
-        {:key => "d", :value => {:integer => "4"}}]}]
+       {:key_group =>
+        {:group_name => "group1",
+         :assignments => [
+           {:key => "a", :value => {:integer => "1"}},
+           {:key => "b", :value => {:integer => "2"}}]}},
+       {:key_group =>
+        {:group_name => "group2",
+         :assignments => [
+           {:key => "c", :value => {:integer => "3"}},
+           {:key => "d", :value => {:integer => "4"}}]}}]
     )
   end
 
@@ -283,49 +293,59 @@ describe TOML::Parser do
       :document => [
         {:globals =>
          [{:key => "\ntitle", :value => {:string => "TOML Example"}}]},
-        {:key_group => [
-          {:group_name => "owner"},
-          {:key => "name", :value => {:string => "Tom Preston-Werner"}},
-          {:key => "organization", :value => {:string => "GitHub"}},
-          {:key => "bio", :value => {:string => "GitHub Cofounder & CEO\\nLikes tater tots and beer."}},
-          {:key => "dob", :value => {:datetime => "1979-05-27T07:32:00Z"}}
-         ]},
-        {:key_group => [
-          {:group_name => "database"},
-          {:key => "server", :value => {:string => "192.168.1.1"}},
-          {:key => "ports", :value => {:array => [
-            {:integer => "8001"},
-            {:integer => "8001"},
-            {:integer => "8002"} ]}},
-          {:key => "connection_max", :value => {:integer => "5000"}},
-          {:key => "enabled", :value => {:boolean => "true"}}]},
-        {:key_group => {:group_name => "servers"}},
-        {:key_group => [
-          {:group_name => "servers.alpha"},
-          {:key => "ip", :value => {:string => "10.0.0.1"}},
-          {:key => "dc", :value => {:string => "eqdc10"}}]},
-        {:key_group => [
-          {:group_name => "servers.beta"},
-          {:key => "ip", :value => {:string => "10.0.0.2"}},
-          {:key => "dc", :value => {:string => "eqdc10"}}]},
-        {:key_group => [
-          {:group_name => "clients"},
-          {:key => "data", :value => {:array => [
-            {:array => [
-              {:string => "gamma"},
-              {:string => "delta"}]},
-            {:array => [
-              {:integer => "1"},
-              {:integer => "2"}]}]}},
-          {:key => "hosts", :value => {:array => [
-            {:string => "alpha"},
-            {:string => "omega"}]}}
-          ]}
-      ]
+        {:key_group =>
+         {:group_name => "owner",
+          :assignments => [
+            {:key => "name", :value => {:string => "Tom Preston-Werner"}},
+            {:key => "organization", :value => {:string => "GitHub"}},
+            {:key => "bio", :value => {:string => "GitHub Cofounder & CEO\\nLikes tater tots and beer."}},
+            {:key => "dob", :value => {:datetime => "1979-05-27T07:32:00Z"}}]}
+         },
+        {:key_group =>
+          {:group_name => "database",
+           :assignments => [
+            {:key => "server", :value => {:string => "192.168.1.1"}},
+            {:key => "ports", :value => {:array => [
+              {:integer => "8001"},
+              {:integer => "8001"},
+              {:integer => "8002"} ]}},
+            {:key => "connection_max", :value => {:integer => "5000"}},
+            {:key => "enabled", :value => {:boolean => "true"}}]}
+         },
+        {:key_group =>
+         {:group_name => "servers",
+          :assignments=>"\n  # You can indent as you please. Tabs or spaces. TOML don't care.\n  "}
+         },
+        {:key_group =>
+          {:group_name => "servers.alpha",
+           :assignments => [
+             {:key => "ip", :value => {:string => "10.0.0.1"}},
+             {:key => "dc", :value => {:string => "eqdc10"}}]}
+         },
+        {:key_group =>
+          {:group_name => "servers.beta",
+           :assignments => [
+             {:key => "ip", :value => {:string => "10.0.0.2"}},
+             {:key => "dc", :value => {:string => "eqdc10"}}]}
+         },
+        {:key_group =>
+          {:group_name => "clients",
+           :assignments => [
+             {:key => "data", :value => {:array => [
+               {:array => [
+                 {:string => "gamma"},
+                 {:string => "delta"}]},
+               {:array => [
+                 {:integer => "1"},
+                 {:integer => "2"}]}]}},
+             {:key => "hosts", :value => {:array => [
+               {:string => "alpha"},
+               {:string => "omega"}]}}]}
+          }]
     )
   end
 
-  it "captures an empty document" do
+  it "captures an empty document as a string match" do
     expect(parser.parse("\n\n#comment\n\n")).to eq(
       :document => {:globals => "\n\n#comment\n\n"}
     )

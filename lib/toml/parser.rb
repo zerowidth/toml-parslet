@@ -90,7 +90,8 @@ module TOML
     end
 
     rule :key_group do
-      (group_name >> (newline >> assignments).maybe).as(:key_group)
+      (group_name >>
+       (newline >> assignments.as(:assignments)).maybe).as(:key_group)
     end
 
     rule :document do
