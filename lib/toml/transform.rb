@@ -8,24 +8,51 @@ module TOML
     rule(:array    => subtree(:a)) { a }
 
     rule(:key => simple(:key), :value => subtree(:value)) do
-      [key, value]
+      {key.to_s => value}
     end
 
     rule(:assignments => simple(:values)) do
       {}
     end
 
-    rule(:assignments => sequence(:values)) do |dict|
-      combine_assignments [dict[:values]]
+    rule(:assignments => subtree(:values)) do |dict|
+      if dict[:values].kind_of? Array
+        combine_assignments dict[:values]
+      else
+        dict[:values]
+      end
     end
 
-    rule(:assignments => subtree(:values)) do |dict|
-      combine_assignments dict[:values]
+    rule(:group_name => simple(:key),
+         :assignments => simple(:values)) do |dict|
+      nested_hash_from_key dict[:key], {}
+    end
+
+    rule(:group_name => simple(:key),
+         :assignments => subtree(:values)) do |dict|
+
+      values = if dict[:values].kind_of? Array
+                 combine_assignments dict[:values]
+               else
+                 dict[:values]
+               end
+      nested_hash_from_key dict[:key], values
+    end
+
+    rule(:key_group => subtree(:values)) { values }
+
+    rule(:document => subtree(:values)) do
+      {}.tap do |data|
+        values.each do |sub_hash|
+          data.merge! sub_hash
+        end
+      end
     end
 
     def self.combine_assignments(assignments)
       {}.tap do |context|
-        assignments.each do |key, value|
+        assignments.each do |assignment|
+          key, value = assignment.first
           context[key.to_s] = value
         end
       end
@@ -42,30 +69,6 @@ module TOML
       end
     end
 
-    rule(:group_name => simple(:key),
-         :assignments => simple(:values)) do |dict|
-      nested_hash_from_key dict[:key], {}
-    end
-
-    rule(:group_name => simple(:key),
-         :assignments => sequence(:values)) do |dict|
-      nested_hash_from_key dict[:key], combine_assignments(dict[:values])
-    end
-
-    rule(:group_name => simple(:key),
-         :assignments => subtree(:values)) do |dict|
-      nested_hash_from_key dict[:key], combine_assignments(dict[:values])
-    end
-
-    rule(:key_group => subtree(:values)) { values }
-
-    rule(:document => subtree(:values)) do
-      {}.tap do |data|
-        values.each do |sub_hash|
-          data.merge! sub_hash
-        end
-      end
-    end
 
   end
 end

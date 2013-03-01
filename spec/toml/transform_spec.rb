@@ -47,13 +47,14 @@ describe TOML::Transform do
   context "key/value assignment" do
     it "converts a key/value pair into a pairs" do
       input = {:key => "a key", :value => "a value"}
-      expect( xform.apply(input) ).to eq(["a key", "a value"])
+      expect( xform.apply(input) ).to eq("a key" => "a value")
     end
 
     it "converts a key/value pair with an array value" do
       input = {:key => "a key", :value => [[1,2],[3,4]]}
-      expect( xform.apply(input) ).to eq(["a key", [[1,2],[3,4]]])
+      expect( xform.apply(input) ).to eq("a key" => [[1,2],[3,4]])
     end
+
   end
 
   context "a list of global assignments" do
@@ -68,12 +69,17 @@ describe TOML::Transform do
       input = {:assignments => "\n#comment"}
       expect(xform.apply(input)).to eq({})
     end
+
+    it "converts an array assignment" do
+      input = {:assignments => {:key => "a", :value => [1, 2]}}
+      expect( xform.apply(input) ).to eq( "a" => [1,2] )
+    end
   end
 
   context "a key group" do
     it "converts a group name and assignments into a hash" do
       input = {:group_name => "group",
-               :assignments => [["c", 1], ["d", 2]]}
+               :assignments => [{"c" => 1}, {"d" => 2}]}
       expect(xform.apply(input)).to eq(
         "group" => {"c" => 1, "d" => 2}
       )
@@ -81,7 +87,7 @@ describe TOML::Transform do
 
     it "converts a complex group name and values into a nested hash" do
       input = {:group_name => "foo.bar",
-               :assignments => [["c", 1], ["d", 2]]}
+               :assignments => [{"c" => 1}, {"d" => 2}]}
       expect(xform.apply(input)).to eq(
         "foo" => {"bar" => {"c" => 1, "d" => 2}}
       )
@@ -101,7 +107,7 @@ describe TOML::Transform do
     expect(xform.apply(input)).to eq(
       "title" => "global title",
       "group1" => {"a" => 1, "b" => 2},
-      "group2" => {"c" => 3, "d" => 4}
+      "group2" => {"c" => [3, 4]}
     )
   end
 
