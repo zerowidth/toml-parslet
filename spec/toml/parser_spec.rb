@@ -233,6 +233,10 @@ describe TOML::Parser do
       )
     end
 
+    it "captures an empty string" do
+      expect(ap.parse("")).to eq(:assignments => "")
+    end
+
     it "captures an assignment after a comment and newlines" do
       expect(ap.parse("#comment\na=1")).to eq(
         :assignments => [{:key => "a", :value => {:integer => "1"}}]
@@ -310,9 +314,11 @@ describe TOML::Parser do
            {:key => "b", :value => {:integer => "2"}}]}},
        {:key_group =>
         {:group_name => "group2",
-         :assignments => [
-           {:key => "c", :value => {:integer => "3"}},
-           {:key => "d", :value => {:integer => "4"}}]}}]
+         :assignments =>
+          {:key => "c", :value => {:array => [
+             {:integer => "3"},
+             {:integer => "4"}
+        ]}}}}]
     )
   end
 
