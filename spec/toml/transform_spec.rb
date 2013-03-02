@@ -25,6 +25,10 @@ describe TOML::Transform do
     it "transforms a string" do
       expect(xform.apply(:string => "a string")).to eq("a string")
     end
+
+    it "unescapes special characters in captured strings" do
+      expect(xform.apply(:string => "a\\nb")).to eq("a\nb")
+    end
   end
 
   context "arrays" do
@@ -118,7 +122,7 @@ describe TOML::Transform do
       "owner" => {
         "name" => "Tom Preston-Werner",
         "organization" => "GitHub",
-        "bio" => "GitHub Cofounder & CEO\\nLikes tater tots and beer.",
+        "bio" => "GitHub Cofounder & CEO\nLikes tater tots and beer.",
         "dob" => Time.parse("1979-05-27 07:32:00 UTC")
       },
       "database" => {

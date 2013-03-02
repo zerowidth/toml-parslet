@@ -63,6 +63,11 @@ describe TOML::Parser do
       expect(value_parser.parse('"hello world"')).to eq(
         :string => "hello world")
     end
+
+    it "captures escaped special characters in captured strings" do
+      expect(value_parser.parse('"hello\\nworld"')).to eq(
+        :string => "hello\\nworld")
+    end
   end
 
   context "array parsing" do

@@ -4,7 +4,14 @@ module TOML
     rule(:float    => simple(:n))  { Float(n) }
     rule(:boolean  => simple(:b))  { b == "true" }
     rule(:datetime => simple(:dt)) { Time.parse dt }
-    rule(:string   => simple(:s))  { s.to_s }
+    rule(:string   => simple(:s)) do
+      s.to_s.gsub(/\\[0tnr]/,
+                  "\\0" => "\0",
+                  "\\t" => "\t",
+                  "\\n" => "\n",
+                  "\\r" => "\r")
+    end
+
     rule(:array    => subtree(:a)) { a }
 
     rule(:key => simple(:key), :value => subtree(:value)) do
