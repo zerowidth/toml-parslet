@@ -68,8 +68,9 @@ module TOML
           if existing[key_s].kind_of?(Hash) && value.kind_of?(Hash)
             existing[key_s] = merge_nested(existing[key_s], value)
           else
-            line, _ = key.line_and_column
-            raise "Cannot reassign existing key #{key_s} from line #{line}"
+            line, column = key.line_and_column
+            raise TransformError,
+              "Cannot reassign existing key #{key_s} at line #{line} column #{column}"
           end
         else
           if value.kind_of? Hash
