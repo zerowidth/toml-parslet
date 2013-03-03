@@ -157,12 +157,12 @@ describe TOML::Transform do
 
   it "raises an error when attempting to reassign a key" do
     input = TOML::Parser.new.parse(fixture("reassign_key.toml"))
-    expect { xform.apply(input) }.to raise_error(/reassign/)
+    expect { xform.apply(input) }.to raise_error(/reassign.*line 4/)
   end
 
   it "raises an error when attempting to reassign a value" do
     input = TOML::Parser.new.parse(fixture("reassign_value.toml"))
-    expect { xform.apply(input) }.to raise_error(/reassign/)
+    expect { xform.apply(input) }.to raise_error(/reassign.*line 3/)
   end
 
 end

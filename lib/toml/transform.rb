@@ -17,7 +17,7 @@ module TOML
     rule(:array    => subtree(:a)) { a }
 
     rule(:key => simple(:key), :value => subtree(:value)) do
-      {key.to_s => value}
+      {key => value} # key is still a Parslet::Slice
     end
 
     rule(:assignments => simple(:values)) do
@@ -57,19 +57,26 @@ module TOML
     rule(:document => subtree(:assignment_groups)) do |dict|
       groups = dict[:assignment_groups]
       groups = [groups] if groups.kind_of?(Hash)
-      groups.inject(&method(:merge_nested))
+      groups.inject({}, &method(:merge_nested))
     end
 
     def self.merge_nested(existing, updates)
       updates.each do |key, value|
-        if existing.has_key?(key)
-          if existing[key].kind_of?(Hash) && value.kind_of?(Hash)
-            existing[key] = merge_nested(existing[key], value)
+        key_s = key.to_s
+
+        if existing.has_key? key_s
+          if existing[key_s].kind_of?(Hash) && value.kind_of?(Hash)
+            existing[key_s] = merge_nested(existing[key_s], value)
           else
-            raise "Cannot reassign existing key"
+            line, _ = key.line_and_column
+            raise "Cannot reassign existing key #{key_s} from line #{line}"
           end
         else
-          existing[key] = value
+          if value.kind_of? Hash
+            existing[key_s] = merge_nested({}, value)
+          else
+            existing[key_s] = value
+          end
         end
       end
 
@@ -87,12 +94,14 @@ module TOML
 
     def self.nested_hash_from_key(key, values)
       {}.tap do |outer|
-        current = outer
+        context = outer
         key.to_s.split(".").each do |key_part|
-          current[key_part] = {}
-          current = current[key_part]
+          # preserve position information for each part of the key
+          sub_key = Parslet::Slice.new(key_part, key.offset, key.line_cache)
+          context[sub_key] = {}
+          context = context[sub_key]
         end
-        current.merge! values
+        context.merge! values
       end
     end
 
