@@ -37,7 +37,11 @@ module TOML
     end
 
     rule(:string_special)  { match['\0\t\n\r"\\\\'] }
-    rule(:escaped_special) { str("\\") >> match['0tnr"\\\\'] }
+    rule(:escaped_special) do
+      str("\\") >>
+      (match['0tnr"\\\\'] |
+       str('x') >> match['a-fA-F0-9'].repeat(2) )
+    end
 
     rule(:string) do
       str('"') >>

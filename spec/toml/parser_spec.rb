@@ -39,6 +39,7 @@ describe TOML::Parser do
       expect(value_parser).to     parse('"hello\\nworld"')
       expect(value_parser).to     parse('"hello\\t\\n\\\\\\0world\\n"')
       expect(value_parser).to_not parse("\"hello\nworld\"")
+      expect(value_parser).to     parse('"\\x0A\\x00\\x00\\x01"')
     end
 
     it "parses integers into {:integer => 'digits'}" do

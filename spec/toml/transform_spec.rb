@@ -28,6 +28,12 @@ describe TOML::Transform do
 
     it "unescapes special characters in captured strings" do
       expect(xform.apply(:string => "a\\nb")).to eq("a\nb")
+      expect(xform.apply(:string => 'a\\"b')).to eq('a"b')
+    end
+
+    it "unescapes byte sequences in captured strings" do
+      expect(xform.apply(:string => "\\x0A\\x00\\x00\\x01")).to eq(
+        "\x0A\x00\x00\x01")
     end
   end
 
