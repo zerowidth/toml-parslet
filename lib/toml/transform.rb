@@ -48,12 +48,23 @@ module TOML
 
     rule(:key_group => subtree(:values)) { values }
 
-    rule(:document => subtree(:values)) do
-      {}.tap do |data|
-        values.each do |sub_hash|
-          data.merge! sub_hash
+    rule(:document => subtree(:assignment_groups)) do |dict|
+      dict[:assignment_groups].inject(&method(:merge_nested))
+    end
+
+    def self.merge_nested(existing, updates)
+      updates.each do |key, value|
+        if existing.has_key?(key)
+          if existing[key].kind_of?(Hash) && value.kind_of?(Hash)
+            existing[key] = merge_nested(existing[key], value)
+          else
+            raise "Cannot reassign existing key"
+          end
         end
+        existing[key] = value
       end
+
+      existing
     end
 
     def self.combine_assignments(assignments)
