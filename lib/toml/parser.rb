@@ -51,7 +51,8 @@ module TOML
 
     def value_list(value_type)
       value_type >>
-      (array_space >> str(",") >> array_space >> value_type).repeat
+      (array_space >> str(",") >> array_space >> value_type).repeat >>
+      array_space.maybe >> str(",").maybe
     end
 
     def array_contents

@@ -125,6 +125,11 @@ describe TOML::Parser do
         %Q([ 1, 2,#comment\n \n\t# a comment, , ,\n3#xx\n\t,\t\n\n\n4]))
     end
 
+    it "parses arrays with trailing commas" do
+      expect(array_parser).to parse("[1,2,]")
+      expect(array_parser).to parse("[1,2\n,\t]")
+    end
+
     it "captures arrays as :array => [ value, value, ... ]" do
       expect(array_parser.parse("[1,2]")).to eq(
         :array => [ {:integer => "1"}, {:integer => "2"}])
