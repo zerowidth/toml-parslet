@@ -142,6 +142,15 @@ describe TOML::Transform do
     output = YAML.load(fixture("example.yaml"))
     expect(xform.apply(input)).to eq(output)
   end
+
+  it "converts a hard TOML doc into a hash" do
+    input = TOML::Parser.new.parse(fixture("hard_example.toml"))
+    expected = YAML.load(fixture("hard_example.yaml"))
+    output = xform.apply input
+
+    expected["the"].keys.each do |k|
+      expect(output["the"][k]).to eq(expected["the"][k])
+    end
   end
 
   it "raises an error when attempting to reassign a key" do

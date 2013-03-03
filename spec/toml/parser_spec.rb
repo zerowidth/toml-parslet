@@ -313,6 +313,10 @@ describe TOML::Parser do
     expect(parser).to parse(fixture("example.toml"))
   end
 
+  it "can parse a hard TOML document" do
+    expect(parser).to parse(fixture("hard_example.toml"))
+  end
+
   it "captures an simple document as a parse tree" do
     expect(parser.parse(fixture("simple.toml"))).to eq(
       :document =>
