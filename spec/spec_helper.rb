@@ -16,6 +16,7 @@ end
 
 require "parslet/rig/rspec"
 require "toml-parslet"
+require "yaml"
 
 def fixture(filename)
   File.read("spec/fixtures/#{filename}")

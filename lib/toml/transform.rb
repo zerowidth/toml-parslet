@@ -62,8 +62,9 @@ module TOML
           else
             raise "Cannot reassign existing key"
           end
+        else
+          existing[key] = value
         end
-        existing[key] = value
       end
 
       existing

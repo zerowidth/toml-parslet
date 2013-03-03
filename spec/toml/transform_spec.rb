@@ -112,6 +112,22 @@ describe TOML::Transform do
     end
   end
 
+  it "merges subsequent key groups into a single group" do
+    input = TOML::Parser.new.parse(
+      "[foo.bar]
+       a = 1
+       b = 2
+       [foo.baz]
+       c = 3
+       d = 4")
+    expect(xform.apply(input)).to eq(
+      "foo" => {
+        "bar" => { "a" => 1, "b" => 2 },
+        "baz" => { "c" => 3, "d" => 4 }
+      }
+    )
+  end
+
   it "converts a simple TOML doc into a hash" do
     input = TOML::Parser.new.parse(fixture("simple.toml"))
     expect(xform.apply(input)).to eq(
@@ -123,30 +139,9 @@ describe TOML::Transform do
 
   it "converts a full TOML doc into a hash" do
     input = TOML::Parser.new.parse(fixture("example.toml"))
-    expect(xform.apply(input)).to eq(
-      "title" => "TOML Example",
-      "owner" => {
-        "name" => "Tom Preston-Werner",
-        "organization" => "GitHub",
-        "bio" => "GitHub Cofounder & CEO\nLikes tater tots and beer.",
-        "dob" => Time.parse("1979-05-27 07:32:00 UTC")
-      },
-      "database" => {
-        "server" => "192.168.1.1",
-        "ports" => [8001, 8001, 8002],
-        "connection_max" => 5000,
-        "enabled" => true},
-        "servers" => {
-          "beta" => {
-            "ip" => "10.0.0.2",
-            "dc" => "eqdc10"
-          }
-        },
-        "clients" => {
-          "data" => [ ["gamma", "delta"], [1, 2] ],
-          "hosts" => ["alpha", "omega"]
-        }
-    )
+    output = YAML.load(fixture("example.yaml"))
+    expect(xform.apply(input)).to eq(output)
+  end
   end
 
   it "raises an error when attempting to reassign a key" do
