@@ -32,6 +32,10 @@ module TOML
       end
     end
 
+    rule(:group_name => simple(:key)) do |dict|
+      nested_hash_from_key dict[:key], {}
+    end
+
     rule(:group_name => simple(:key),
          :assignments => simple(:values)) do |dict|
       nested_hash_from_key dict[:key], {}
@@ -51,7 +55,9 @@ module TOML
     rule(:key_group => subtree(:values)) { values }
 
     rule(:document => subtree(:assignment_groups)) do |dict|
-      dict[:assignment_groups].inject(&method(:merge_nested))
+      groups = dict[:assignment_groups]
+      groups = [groups] if groups.kind_of?(Hash)
+      groups.inject(&method(:merge_nested))
     end
 
     def self.merge_nested(existing, updates)
@@ -89,7 +95,6 @@ module TOML
         current.merge! values
       end
     end
-
 
   end
 end

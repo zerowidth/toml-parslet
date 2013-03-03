@@ -88,24 +88,21 @@ describe TOML::Transform do
 
   context "a key group" do
     it "converts a group name and assignments into a hash" do
-      input = {:group_name => "group",
-               :assignments => [{"c" => 1}, {"d" => 2}]}
+      input = TOML::Parser.new.parse("[group]\nc=1\nd=2")
       expect(xform.apply(input)).to eq(
         "group" => {"c" => 1, "d" => 2}
       )
     end
 
     it "converts a complex group name and values into a nested hash" do
-      input = {:group_name => "foo.bar",
-               :assignments => [{"c" => 1}, {"d" => 2}]}
+      input = TOML::Parser.new.parse("[foo.bar]\nc=1\nd=2")
       expect(xform.apply(input)).to eq(
         "foo" => {"bar" => {"c" => 1, "d" => 2}}
       )
     end
 
     it "converts an empty key group (comments-only) into a hash" do
-      input = {:group_name => "foo.bar",
-               :assignments => "\n#comment"}
+      input = TOML::Parser.new.parse("[foo.bar]\n#comment")
       expect(xform.apply(input)).to eq(
         "foo" => {"bar" => {}}
       )
@@ -126,6 +123,11 @@ describe TOML::Transform do
         "baz" => { "c" => 3, "d" => 4 }
       }
     )
+  end
+
+  it "converts a TOML document with just an empty key group" do
+    input = TOML::Parser.new.parse("[key.group]")
+    expect(xform.apply(input)).to eq("key" => {"group" => {}})
   end
 
   it "converts a simple TOML doc into a hash" do
