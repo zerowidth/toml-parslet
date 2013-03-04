@@ -1,4 +1,5 @@
 require "parslet"
+require "time"
 require "toml/version"
 require "toml/parser"
 require "toml/transform"
