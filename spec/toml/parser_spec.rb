@@ -194,6 +194,10 @@ describe TOML::Parser do
       expect(gn).to_not parse("[key]]")
     end
 
+    it "does not parse an empty .. dotted name" do
+      expect(gn).to_not parse("[key..group]")
+    end
+
     it "allows a comment after a group name" do
       expect(gn).to parse("[key.group.name] # comment")
       expect(gn).to parse("[key.group.name]#comment")

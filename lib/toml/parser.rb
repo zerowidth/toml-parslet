@@ -81,9 +81,17 @@ module TOML
       value.as(:value)
     end
 
+    rule :group_name_part do
+      (str("]").absent? >> str(".").absent? >> any).repeat(1)
+    end
+
+    rule :dotted_name do
+      group_name_part >> (str(".") >> group_name_part).repeat
+    end
+
     rule :group_name do
       space? >> str("[") >>
-      (str("]").absent? >> any).repeat(1).as(:group_name) >>
+      dotted_name.as(:group_name) >>
       str("]") >> space? >> comment?
     end
 
