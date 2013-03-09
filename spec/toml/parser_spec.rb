@@ -74,8 +74,8 @@ describe TOML::Parser do
   context "array parsing" do
     let(:array_parser) { parser.array }
 
-    it "does not parse empty arrays" do
-      expect(array_parser).to_not parse("[]")
+    it "parses empty arrays" do
+      expect(array_parser).to parse("[]")
     end
 
     it "parses arrays of integers" do
@@ -133,6 +133,10 @@ describe TOML::Parser do
     it "captures arrays as :array => [ value, value, ... ]" do
       expect(array_parser.parse("[1,2]")).to eq(
         :array => [ {:integer => "1"}, {:integer => "2"}])
+    end
+
+    it "captures an empty array" do
+      expect(array_parser.parse("[]")).to eq(:array => "[]")
     end
 
     it "captures nested arrays" do

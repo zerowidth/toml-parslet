@@ -44,6 +44,11 @@ describe TOML::Transform do
       expect( xform.apply(input) ).to eq([1,2])
     end
 
+    it "transforms an empty array" do
+      input= {:array => "[]"}
+      expect( xform.apply(input) ).to eq([])
+    end
+
     it "transforms nested arrays" do
       input = {
         :array => [

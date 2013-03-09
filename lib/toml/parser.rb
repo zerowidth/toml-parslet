@@ -62,7 +62,7 @@ module TOML
 
     rule :array do
       (str("[") >> array_space >>
-      array_contents.repeat(1) >>
+      array_contents.repeat >>
       array_space >> str("]")).as(:array)
     end
 

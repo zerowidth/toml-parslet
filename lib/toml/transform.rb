@@ -15,7 +15,8 @@ module TOML
         '\\"' => '"').gsub(/\\x([0-9a-fA-F]{2})/) { [$1].pack("H2") }
     end
 
-    rule(:array    => subtree(:a)) { a }
+    rule(:array => simple(:a)) { [] }
+    rule(:array => subtree(:a)) { a }
 
     rule(:key => simple(:key), :value => subtree(:value)) do
       {key => value} # key is still a Parslet::Slice
