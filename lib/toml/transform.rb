@@ -87,24 +87,36 @@ module TOML
     end
 
     def self.combine_assignments(assignments)
-      {}.tap do |context|
+      {}.tap do |combined|
         assignments.each do |assignment|
           key, value = assignment.first
-          context[key.to_s] = value
+          combined[key.to_s] = value
         end
       end
     end
 
+    # Internal: create a nested hash from a key name and values
+    #
+    # key    - a dotted key such as "foo.bar"
+    # values - the values to assign at the innermost level
+    #
+    # Example:
+    #
+    #   nested_hash_from_key("foo.bar", "a" => 1)
+    #   # => {"foo" => {"bar" => {"a" => 1}}}
+    #
     def self.nested_hash_from_key(key, values)
-      {}.tap do |outer|
-        context = outer
-        key.to_s.split(".").each do |key_part|
-          # preserve position information for each part of the key
-          sub_key = Parslet::Slice.new(key_part, key.offset, key.line_cache)
-          context[sub_key] = {}
-          context = context[sub_key]
-        end
-        context.merge! values
+      key_part, remainder = key.to_s.split(".", 2)
+
+      # preserve position information for each part of the key for error
+      # reporting later on during the transform:
+      sub_key = Parslet::Slice.new(key_part, key.offset, key.line_cache)
+
+      if remainder
+        rest = Parslet::Slice.new(remainder, key.offset, key.line_cache)
+        {sub_key => nested_hash_from_key(rest, values)}
+      else
+        {sub_key => values}
       end
     end
 
