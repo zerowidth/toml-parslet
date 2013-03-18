@@ -36,10 +36,15 @@ describe TOML::Parser do
     it "parses strings" do
       expect(value_parser).to     parse('""')
       expect(value_parser).to     parse('"hello world"')
-      expect(value_parser).to     parse('"hello\\nworld"')
-      expect(value_parser).to     parse('"hello\\t\\n\\\\\\0world\\n"')
+    end
+
+    it "parses escaped sequences in strings" do
+      expect(value_parser).to     parse('"\\b\\t\\n\\f\\r\\"\\/\\\\"')
+      expect(value_parser).to     parse('"no way, jos\\u00E9"')
       expect(value_parser).to_not parse("\"hello\nworld\"")
-      expect(value_parser).to     parse('"\\x0A\\x00\\x00\\x01"')
+      expect(value_parser).to_not parse("\"hello/world\"")
+      expect(value_parser).to_not parse(%Q("\u001F"))
+      expect(value_parser).to     parse('"\\u001F"')
     end
 
     it "parses integers into {:integer => 'digits'}" do

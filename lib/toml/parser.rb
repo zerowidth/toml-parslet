@@ -36,11 +36,14 @@ module TOML
        digit.repeat(2) >> str("Z")).as(:datetime)
     end
 
-    rule(:string_special)  { match['\0\t\n\r"\\\\'] }
+    rule(:string_special) do
+      match['"/\\\\'] | match[ (0..31).to_a.pack("U*") ]
+    end
+
     rule(:escaped_special) do
       str("\\") >>
-      (match['0tnr"\\\\'] |
-       str('x') >> match['a-fA-F0-9'].repeat(2) )
+      (match['btnfr"/\\\\'] |
+       str('u') >> match['A-F0-9'].repeat(4) )
     end
 
     rule(:string) do

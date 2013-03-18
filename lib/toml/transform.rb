@@ -6,13 +6,16 @@ module TOML
     rule(:datetime => simple(:dt)) { Time.parse dt }
     rule(:string   => simple(:s)) do
       s.to_s.gsub(
-        /\\[0tnr"\\]/,
-        "\\0" => "\0",
+        /\\[btnfr"\/\\]/,
+        "\\b" => "\b",
         "\\t" => "\t",
         "\\n" => "\n",
+        "\\f" => "\f",
         "\\r" => "\r",
+        '\\"' => '"',
+        "\\/" => "/",
         "\\\\" => "\\",
-        '\\"' => '"').gsub(/\\x([0-9a-fA-F]{2})/) { [$1].pack("H2") }
+      ).gsub(/\\u([0-9a-fA-F]{4})/) { [$1.hex].pack("U") }
     end
 
     rule(:array => simple(:a)) { [] }

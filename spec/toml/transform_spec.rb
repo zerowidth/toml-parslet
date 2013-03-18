@@ -1,3 +1,5 @@
+# encoding: utf-8
+
 require "spec_helper"
 
 describe TOML::Transform do
@@ -27,14 +29,18 @@ describe TOML::Transform do
     end
 
     it "unescapes special characters in captured strings" do
-      expect(xform.apply(:string => "a\\nb")).to eq("a\nb")
-      expect(xform.apply(:string => 'a\\"b')).to eq('a"b')
-      expect(xform.apply(:string => 'a\\\\b')).to eq('a\\b')
+      expect(xform.apply(:string => "\\b")).to eq("\b")
+      expect(xform.apply(:string => "\\t")).to eq("\t")
+      expect(xform.apply(:string => "\\n")).to eq("\n")
+      expect(xform.apply(:string => "\\f")).to eq("\f")
+      expect(xform.apply(:string => "\\r")).to eq("\r")
+      expect(xform.apply(:string => "\\\"")).to eq("\"")
+      expect(xform.apply(:string => "\\/")).to eq("/")
+      expect(xform.apply(:string => "\\\\")).to eq("\\")
     end
 
-    it "unescapes byte sequences in captured strings" do
-      expect(xform.apply(:string => "\\x0A\\x00\\x00\\x01")).to eq(
-        "\x0A\x00\x00\x01")
+    it "unescapes unicode sequences in captured strings" do
+      expect(xform.apply(:string => "jos\u00E9\u000A")).to eq("josé\n")
     end
   end
 
